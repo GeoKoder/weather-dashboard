@@ -95,3 +95,41 @@ function filterDailyForecast(list) {
     const allDays = Object.values(days)
     return allDays.slice(1, 6)
 }
+
+searchBtn.addEventListener("click", function() {
+    const city = cityInput.value.trim()
+    if (city !== "") {
+        searchWeather(city)
+    }
+})
+
+cityInput.addEventListener("keydown", function(event) {
+    if (event.key === "Enter") {
+        const city = cityInput.value.trim()
+        if (city !== "") {
+            searchWeather(city)
+        }
+    }
+})
+
+function showLoading() {
+    loadingEl.classList.remove("hidden")
+    weatherDisplay.classList.add("hidden")
+    errorMessageEl.classList.add("hidden")
+}
+
+function hideLoading() {
+    loadingEl.classList.add("hidden")
+}
+
+function showError(message) {
+    errorTextEl.textContent = message
+    errorMessageEl.classList.remove("hidden")
+    weatherDisplay.classList.add("hidden")
+}
+
+function showWeather() {
+    weatherDisplay.classList.remove("hidden")
+    errorMessageEl.classList.add("hidden")
+}
+
