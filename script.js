@@ -133,3 +133,38 @@ function showWeather() {
     errorMessageEl.classList.add("hidden")
 }
 
+function saveToHistory(city) {
+    let history = JSON.parse(localStorage.getItem("weather-history")) || []
+
+    // Remove the city if it already exists (to avoid duplicates)
+    history = history.filter(function(item) {
+        return item.toLowerCase() !== city.toLowerCase()
+    })
+
+    history.unshift(city)
+
+    if (history.length > 5) {
+        history = history.slice(0, 5)
+    }
+
+    localStorage.setItem("weather-history", JSON.stringify(history))
+    renderSearchHistory()
+}
+
+function renderSearchHistory() {
+    const history = JSON.parse(localStorage.getItem("weather-history")) || []
+    searchHistoryContainer.innerHTML = ""
+
+    history.forEach(function(city) {
+        const btn = document.createElement("button")
+        btn.className = "history-btn"
+        btn.textContent = city
+        btn.addEventListener("click", function() {
+            cityInput.value = city
+            searchWeather(city)
+        })
+        searchHistoryContainer.appendChild(btn)
+    })
+}
+
+renderSearchHistory()
