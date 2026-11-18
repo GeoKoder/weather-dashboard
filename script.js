@@ -79,3 +79,19 @@ function displayForecast(data) {
         forecastCardsEl.appendChild(card)
     })
 }
+
+function filterDailyForecast(list) {
+    const days = {}
+
+    list.forEach(function(item) {
+        const date = new Date(item.dt * 1000).toLocaleDateString()
+
+        if (!days[date]) {
+            days[date] = item
+        }
+    })
+
+    // Remove today (we already show current weather) and take next 5 days
+    const allDays = Object.values(days)
+    return allDays.slice(1, 6)
+}
