@@ -28,41 +28,66 @@ async function searchWeather(city) {
 
   try {
     // Fetch current weather
-    const response = await fetch(
-      `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}&units=metric`,
-    );
+    let response;
+    try {
+      response = await fetch(
+        `${BASE_URL}/weather?q=${city}&appid=${API_KEY}&units=metric`,
+      );
+    } catch (error) {
+      throw new Error("Network error");
+    }
+
     // Check response status
+    if (response.status === 404) {
+      throw new Error("City not found");
+    }
     if (!response.ok) {
-      throw new Error(`API error: ${response.status} ${response.statusText}`);
+      throw new Error("API error");
     }
     // Parse JSON
     const data = await response.json();
+
     // Display current weather data
-    weatherDisplay.classList.remove("hidden");
     displayCurrentWeather(data);
+    weatherDisplay.classList.remove("hidden");
 
     // Fetch 5-day forecast
-    const forecastResponse = await fetch(
-      `https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${API_KEY}&units=metric`,
-    );
-
-    if (!forecastResponse.ok) {
-      throw new Error(
-        `API error: ${forecastResponse.status} ${forecastResponse.statusText}`,
+    let forecastResponse;
+    try {
+      forecastResponse = await fetch(
+        `${BASE_URL}/forecast?q=${city}&appid=${API_KEY}&units=metric`,
       );
+    } catch (error) {
+      throw new Error("Network error");
     }
+
+    if (forecastResponse.status === 404) {
+      throw new Error("City not found");
+    }
+    if (!forecastResponse.ok) {
+      throw new Error(`Forecast API error: ${forecastResponse.status}`);
+    }
+
     // Parse and display forecast
     const forecastData = await forecastResponse.json();
     displayForecast(forecastData);
+
     // Save to search history
-    // saveToHistory(city);
+    saveToHistory(city);
   } catch (error) {
     // Show error message
-    errorMessageEl.hidden = false;
-    errorTextEl.textContent = `Failed to load countres: ${error.message}. Check your internet connection and refresh.`;
+    if (error.message === "City not found") {
+      showError("City not found. Please check the spelling and try again.");
+    } else if (error.message === "Network error") {
+      showError(
+        "Unable to connect. Check your internet connection and try again.",
+      );
+    } else {
+      showError("Something went wrong. Please try again later.");
+    }
   } finally {
     // Hide loading
-    loadingEl.hidden = true;
+    loadingEl.classList.add("hidden");
     // Re-enable search button
     searchBtn.disabled = false;
   }
