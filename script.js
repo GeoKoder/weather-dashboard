@@ -1,4 +1,4 @@
-// OpenWeather API Key 
+// OpenWeather API Key
 const API_KEY = "66af9af961fa40fe7888932349c7089b";
 const BASE_URL = "https://api.openweathermap.org/data/2.5";
 
@@ -19,152 +19,182 @@ const feelsLikeEl = document.getElementById("feels-like");
 const forecastCardsEl = document.getElementById("forecast-cards");
 
 async function searchWeather(city) {
-    // Shopw loading, hide weather display, hide error
-    // Disable search button
+  // Show loading, hide weather display, hide error
+  loadingEl.classList.remove("hidden");
+  weatherDisplay.classList.add("hidden");
+  errorMessageEl.classList.add("hidden");
+  // Disable search button
+  searchBtn.disabled = true;
 
-    try {
-        // Fetch current weather
-        // Check response status
-        // Parse JSON
-        // Display current weather data
-        // Fetch 5-day forecast
-        // Parse and display forecast
-        // Save to search history
-    } catch (error) {
-        // Show error message
-    } finally {
-        // Hide loading
-        // Re-enable search button
+  try {
+    // Fetch current weather
+    const response = await fetch(
+      `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}&units=metric`,
+    );
+    // Check response status
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status} ${response.statusText}`);
     }
+    // Parse JSON
+    const data = await response.json();
+    // Display current weather data
+    weatherDisplay.classList.remove("hidden");
+    displayCurrentWeather(data);
+
+    // Fetch 5-day forecast
+    const forecastResponse = await fetch(
+      `https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${API_KEY}&units=metric`,
+    );
+
+    if (!forecastResponse.ok) {
+      throw new Error(
+        `API error: ${forecastResponse.status} ${forecastResponse.statusText}`,
+      );
+    }
+    // Parse and display forecast
+    const forecastData = await forecastResponse.json();
+    displayForecast(forecastData);
+    // Save to search history
+    // saveToHistory(city);
+  } catch (error) {
+    // Show error message
+    errorMessageEl.hidden = false;
+    errorTextEl.textContent = `Failed to load countres: ${error.message}. Check your internet connection and refresh.`;
+  } finally {
+    // Hide loading
+    loadingEl.hidden = true;
+    // Re-enable search button
+    searchBtn.disabled = false;
+  }
 }
 
 function displayCurrentWeather(data) {
-    const { name } = data
-    const { temp, feels_like, humidity } =  data.main
-    const { description, icon } = data.weather[0]
-    const { speed } = data.wind
+  const { name } = data;
+  const { temp, feels_like, humidity } = data.main;
+  const { description, icon } = data.weather[0];
+  const { speed } = data.wind;
 
-    cityNameEl.textContent = name
-    temperatureEl.textContent =  `${Math.round(temp)}°C`
-    descriptionEl.textContent = description
-    weatherIconEl.src = `https://openweathermap.org/img/wn/${icon}@2x.png`
-    weatherIconEl.alt = description
-    humidityEl.textContent = `${humidity}`
-    windEl.textContent = `${speed} m/s`
-    feelsLikeEl.textContent = `${Math.round(feels_like)}°C`
+  cityNameEl.textContent = name;
+  temperatureEl.textContent = `${Math.round(temp)}°C`;
+  descriptionEl.textContent = description;
+  weatherIconEl.src = `https://openweathermap.org/img/wn/${icon}@2x.png`;
+  weatherIconEl.alt = description;
+  humidityEl.textContent = `${humidity}`;
+  windEl.textContent = `${speed} m/s`;
+  feelsLikeEl.textContent = `${Math.round(feels_like)}°C`;
 }
 
 function displayForecast(data) {
-    forecastCardsEl.innerHTML = ""
+  forecastCardsEl.innerHTML = "";
 
-    // Filter to get one entry per day (at noon or closest to it)
-    const dailyData = filterDailyForecast(data.list)
+  // Filter to get one entry per day (at noon or closest to it)
+  const dailyData = filterDailyForecast(data.list);
 
-    dailyData.forEach(function(day) {
-        const date = new Date(day.dt * 1000)
-        const dayName = date.toLocaleDateString("en-US", { weekday: "short" })
-        const { icon, description } = day.weather[0]
-        const tempHigh = Math.round(day.main.temp_max)
-        const tempLow = Math.round(day.main.temp_min)
+  dailyData.forEach(function (day) {
+    const date = new Date(day.dt * 1000);
+    const dayName = date.toLocaleDateString("en-US", { weekday: "short" });
+    const { icon, description } = day.weather[0];
+    const tempHigh = Math.round(day.main.temp_max);
+    const tempLow = Math.round(day.main.temp_min);
 
-        const card = document.createElement("div")
-        card.className = "forecast-card"
-        card.innerHTML = `
+    const card = document.createElement("div");
+    card.className = "forecast-card";
+    card.innerHTML = `
             <div class="day">${dayName}</div>
             <img src="https://openweathermap.org/img/wn/${icon}@2x.png" alt="${description}">
             <div class="temp-high>${tempHigh}°C</div>
             <div class="temp-low>${tempLow}°C</div>
-        `
+        `;
 
-        forecastCardsEl.appendChild(card)
-    })
+    forecastCardsEl.appendChild(card);
+  });
 }
 
 function filterDailyForecast(list) {
-    const days = {}
+  const days = {};
 
-    list.forEach(function(item) {
-        const date = new Date(item.dt * 1000).toLocaleDateString()
+  list.forEach(function (item) {
+    const date = new Date(item.dt * 1000).toLocaleDateString();
 
-        if (!days[date]) {
-            days[date] = item
-        }
-    })
+    if (!days[date]) {
+      days[date] = item;
+    }
+  });
 
-    // Remove today (we already show current weather) and take next 5 days
-    const allDays = Object.values(days)
-    return allDays.slice(1, 6)
+  // Remove today (we already show current weather) and take next 5 days
+  const allDays = Object.values(days);
+  return allDays.slice(1, 6);
 }
 
-searchBtn.addEventListener("click", function() {
-    const city = cityInput.value.trim()
-    if (city !== "") {
-        searchWeather(city)
-    }
-})
+searchBtn.addEventListener("click", function () {
+  const city = cityInput.value.trim();
+  if (city !== "") {
+    searchWeather(city);
+  }
+});
 
-cityInput.addEventListener("keydown", function(event) {
-    if (event.key === "Enter") {
-        const city = cityInput.value.trim()
-        if (city !== "") {
-            searchWeather(city)
-        }
+cityInput.addEventListener("keydown", function (event) {
+  if (event.key === "Enter") {
+    const city = cityInput.value.trim();
+    if (city !== "") {
+      searchWeather(city);
     }
-})
+  }
+});
 
 function showLoading() {
-    loadingEl.classList.remove("hidden")
-    weatherDisplay.classList.add("hidden")
-    errorMessageEl.classList.add("hidden")
+  loadingEl.classList.remove("hidden");
+  weatherDisplay.classList.add("hidden");
+  errorMessageEl.classList.add("hidden");
 }
 
 function hideLoading() {
-    loadingEl.classList.add("hidden")
+  loadingEl.classList.add("hidden");
 }
 
 function showError(message) {
-    errorTextEl.textContent = message
-    errorMessageEl.classList.remove("hidden")
-    weatherDisplay.classList.add("hidden")
+  errorTextEl.textContent = message;
+  errorMessageEl.classList.remove("hidden");
+  weatherDisplay.classList.add("hidden");
 }
 
 function showWeather() {
-    weatherDisplay.classList.remove("hidden")
-    errorMessageEl.classList.add("hidden")
+  weatherDisplay.classList.remove("hidden");
+  errorMessageEl.classList.add("hidden");
 }
 
 function saveToHistory(city) {
-    let history = JSON.parse(localStorage.getItem("weather-history")) || []
+  let history = JSON.parse(localStorage.getItem("weather-history")) || [];
 
-    // Remove the city if it already exists (to avoid duplicates)
-    history = history.filter(function(item) {
-        return item.toLowerCase() !== city.toLowerCase()
-    })
+  // Remove the city if it already exists (to avoid duplicates)
+  history = history.filter(function (item) {
+    return item.toLowerCase() !== city.toLowerCase();
+  });
 
-    history.unshift(city)
+  history.unshift(city);
 
-    if (history.length > 5) {
-        history = history.slice(0, 5)
-    }
+  if (history.length > 5) {
+    history = history.slice(0, 5);
+  }
 
-    localStorage.setItem("weather-history", JSON.stringify(history))
-    renderSearchHistory()
+  localStorage.setItem("weather-history", JSON.stringify(history));
+  renderSearchHistory();
 }
 
 function renderSearchHistory() {
-    const history = JSON.parse(localStorage.getItem("weather-history")) || []
-    searchHistoryContainer.innerHTML = ""
+  const history = JSON.parse(localStorage.getItem("weather-history")) || [];
+  searchHistoryContainer.innerHTML = "";
 
-    history.forEach(function(city) {
-        const btn = document.createElement("button")
-        btn.className = "history-btn"
-        btn.textContent = city
-        btn.addEventListener("click", function() {
-            cityInput.value = city
-            searchWeather(city)
-        })
-        searchHistoryContainer.appendChild(btn)
-    })
+  history.forEach(function (city) {
+    const btn = document.createElement("button");
+    btn.className = "history-btn";
+    btn.textContent = city;
+    btn.addEventListener("click", function () {
+      cityInput.value = city;
+      searchWeather(city);
+    });
+    searchHistoryContainer.appendChild(btn);
+  });
 }
 
-renderSearchHistory()
+renderSearchHistory();
